@@ -1,19 +1,26 @@
-const myExpress = require("./config/express");
+import config from './config/config.js' 
+import app from './config/express.js'
+import mongoose from 'mongoose' 
 
 function Start() {    
-    const app = myExpress();
-    app.listen(3000);
-    
-    const express = require('express');
-    app.use(express.json());
-    app.use(express.urlencoded({ extended: true }));
+    mongoose.Promise = global.Promise
+mongoose.connect(config.mongoUri, { useNewUrlParser: true, useUnifiedTopology: true } )
+ .then(() => {
+console.log("Connected to the database!");
+})
 
-    app.get('/', (req, res, next) => {
-        res.send("{\"message\": \"Welcome to Dress store application.\"}");
-        next();
-    });
-    console.log("Server started on http://localhost:3000");
-    module.exports = app;
+mongoose.connection.on('error', () => {
+throw new Error(`unable to connect to database: ${config.mongoUri}`) 
+})
+app.get("/", (req, res) => {
+res.json({ message: "Welcome to User application." });
+});
+app.listen(config.port, (err) => { 
+if (err) {
+console.log(err) 
+}
+console.info('Server started on port %s.', config.port) 
+})
 }
 
 Start();
