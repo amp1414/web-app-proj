@@ -99,4 +99,4 @@ const signOut = async (req, res) => {
     return res.status(200).json({ message: 'Logout successful.' });
 }
 
-export { create, list, userByID, update, read, remove, signIn, signOut};
+export default { create, list, userByID, update, read, remove, signIn, signOut};
