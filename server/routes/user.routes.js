@@ -16,6 +16,6 @@ router.route("/api/users/:userId").get(userCtrl.read);
 router.route("/api/users/:userId").put(userCtrl.update);
 router.route("/api/users/:userId").delete(userCtrl.remove);
 router.param("userId", userCtrl.userByID);
-router.route("/api/users/signIn/:userId").get(userCtrl.signIn);
-router.route("/api/user/signOut").get(userCtrl.signOut);
+router.route("/api/users/signin/:userId").get(userCtrl.signIn);
+router.route("/api/users/signout").get(userCtrl.signOut);
 export default router;
