@@ -1,5 +1,4 @@
 import mongoose from 'mongoose'
-
 const UserSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -10,7 +9,6 @@ const UserSchema = new mongoose.Schema({
         type: String,
         trim: true,
        unique: 'Email already exists',
-       match: [/.+\@.+\..+/, 'Please fill a valid email address'],
        required: 'Email is required'
         },
     hashed_password: {
@@ -51,5 +49,25 @@ UserSchema.path("hashed_password").validate(function (v) {
     this.invalidate("password", "Password is required");
   }
 }, null);
+
+UserSchema.methods = {
+  authenticate: function(plainText) {
+    return (plainText) === this.hashed_password
+  },
+  // //encryptPassword: function(password) {
+  //   if (!password) return ''
+  //   try {
+  //     return crypto
+  //       .createHmac('sha1', this.salt)
+  //       .update(password)
+  //       .digest('hex')
+  //   } catch (err) {
+  //     return ''
+  //   }
+  // },
+  // makeSalt: function() {
+  //   return Math.round((new Date().valueOf() * Math.random())) + ''
+  // }
+}
 //module.exports = mongoose.model('User', UserSchema);
 export default mongoose.model("User", UserSchema);

@@ -3,19 +3,18 @@ import userCtrl from "../controllers/user.controller.js";
 const router = express.Router();
 router.route("/api/users").get(userCtrl.list).post(userCtrl.create);
 router
+  // .route("/api/users/:userId")
+  // .get(userCtrl.requireSignin, userCtrl.read)
+  // .put(userCtrl.requireSignin, userCtrl.hasAuthorization, userCtrl.update)
+  // .delete(userCtrl.requireSignin, userCtrl.hasAuthorization, userCtrl.remove)
   .route("/api/users/:userId")
   .get(userCtrl.read)
-  .put(userCtrl.update)
-  .delete(userCtrl.remove);
-router.route("/api/users").get(userCtrl.create);
-router.param("userId", userCtrl.userByID);
-router.route("/api/users").post(userCtrl.create);
-router.route("/api/users").get(userCtrl.list);
-router.param("userId", userCtrl.userByID);
-router.route("/api/users/:userId").get(userCtrl.read);
-router.route("/api/users/:userId").put(userCtrl.update);
-router.route("/api/users/:userId").delete(userCtrl.remove);
-router.param("userId", userCtrl.userByID);
-router.route("/api/users/signin/:userId").get(userCtrl.signIn);
-router.route("/api/users/signout").get(userCtrl.signOut);
+  .put(userCtrl.hasAuthorization, userCtrl.update)
+  .delete(userCtrl.hasAuthorization, userCtrl.remove)
+router.param('userId', userCtrl.userByID)
+
+router.route("/api/auth/signin")
+  .post(userCtrl.signIn)
+  router.route("/api/auth/signout")
+  .post(userCtrl.signOut)
 export default router;
