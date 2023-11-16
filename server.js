@@ -1,5 +1,5 @@
 import config from './config/config.js' 
-import app from './config/express.js'
+import app from './express.js'
 import mongoose from 'mongoose' 
 
 function Start() {    
