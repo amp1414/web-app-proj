@@ -1,6 +1,9 @@
 import User from "../models/user.model.js";
 import extend from "lodash/extend.js";
 import errorHandler from "./error.controller.js";
+import jwt from 'jsonwebtoken';
+import expressJwt from 'express-jwt';
+import config from './../../config/config.js';
 const create = async (req, res) => {
   const user = new User(req.body);
   try {
@@ -74,16 +77,17 @@ const remove = async (req, res) => {
 };
 const signIn = async (req, res) => {
   try {
-    const { username, password } = req.body;
-    const user = await User.findOne({ username });
+    const user = await User.findOne({"email": req.body.email});
+    console.log(user);
 
     if (!user) {
-      return res.status(401).json({ message: "Invalid username or password." });
+      return res.status(401).json({ message: "Invalid username." });
     }
 
-    const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) {
-      return res.status(401).json({ message: "Invalid username or password." });
+    if (!user.authenticate(req.body.password)) {
+      return res.status('401').send({
+        error: "password don't match."
+      })
     }
 
     const token = jwt.sign({ userId: user._id }, "secret", {
@@ -96,7 +100,23 @@ const signIn = async (req, res) => {
 };
 
 const signOut = async (req, res) => {
+    res.clearCookie("")
     return res.status(200).json({ message: 'Logout successful.' });
+
 }
 
-export default { create, list, userByID, update, read, remove, signIn, signOut};
+// const requireSignin = expressJwt({
+//   secret: config.jwtSecret,
+//   userProperty: 'auth'
+// });
+
+const hasAuthorization = (req, res, next) => {
+  const authorized = req.profile && req.auth && req.profile._id == req.auth._id
+  if (!(authorized)) {
+    return res.status('403').json({
+      error: "User is not authorized"
+    })
+  }
+  next()
+}
+export default { create, list, userByID, update, read, remove, signIn, signOut, hasAuthorization};//, requireSignin};
