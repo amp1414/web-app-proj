@@ -1,20 +1,21 @@
-import express from "express";
-import userCtrl from "../controllers/user.controller.js";
-const router = express.Router();
-router.route("/api/users").get(userCtrl.list).post(userCtrl.create);
-router
-  // .route("/api/users/:userId")
-  // .get(userCtrl.requireSignin, userCtrl.read)
-  // .put(userCtrl.requireSignin, userCtrl.hasAuthorization, userCtrl.update)
-  // .delete(userCtrl.requireSignin, userCtrl.hasAuthorization, userCtrl.remove)
-  .route("/api/users/:userId")
-  .get(userCtrl.read)
-  .put(userCtrl.hasAuthorization, userCtrl.update)
-  .delete(userCtrl.hasAuthorization, userCtrl.remove)
-router.param('userId', userCtrl.userByID)
+// server/routes/user.routes.js
 
-router.route("/api/auth/signin")
-  .post(userCtrl.signIn)
-  router.route("/api/auth/signout")
-  .post(userCtrl.signOut)
+import express from 'express';
+import userController from '../controllers/user.controller.js';
+import authenticate from '../middleware/authenticate.js'; 
+
+const router = express.Router();
+
+router.post('/', userController.createUser);
+
+router.post('/signin', userController.signIn);
+
+router.get('/', authenticate, userController.listUsers);
+
+router.get('/:userId', authenticate, userController.readUser);
+
+router.put('/:userId', authenticate, userController.updateUser);
+
+router.delete('/:userId', authenticate, userController.deleteUser);
+
 export default router;
