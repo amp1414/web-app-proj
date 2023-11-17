@@ -6,6 +6,10 @@ const userSchema = new mongoose.Schema({
   name: String,
   email: { type: String, unique: true, required: true },
   password: { type: String, required: true },
+  address: { type: String, trim: true },
+  phone: { type: String, trim: true },
+  created: { type: Date, default: Date.now },
+  updated: { type: Date, default: Date.now }
 });
 
 // Hash the user's password before saving
