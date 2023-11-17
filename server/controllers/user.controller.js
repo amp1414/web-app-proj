@@ -1,122 +1,97 @@
-import User from "../models/user.model.js";
-import extend from "lodash/extend.js";
-import errorHandler from "./error.controller.js";
+// controllers/user.controller.js
+import User from '../models/user.model.js';
 import jwt from 'jsonwebtoken';
-import expressJwt from 'express-jwt';
-import config from './../../config/config.js';
-const create = async (req, res) => {
+import bcrypt from 'bcrypt';
+
+// CREATE: Sign up a new user
+const createUser = async (req, res) => {
   const user = new User(req.body);
   try {
     await user.save();
-    return res.status(200).json({
-      message: "Successfully signed up!",
-    });
+    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, { expiresIn: '2h' });
+    res.status(201).json({ user, token });
   } catch (err) {
-    return res.status(400).json({
-      error: errorHandler.getErrorMessage(err),
-    });
+    res.status(500).json({ error: err.message });
   }
 };
-const list = async (req, res) => {
+
+// READ: Get all users
+const listUsers = async (req, res) => {
   try {
-    let users = await User.find().select("name email 	updated created");
+    const users = await User.find().select('-password'); // Exclude password from the results
     res.json(users);
   } catch (err) {
-    return res.status(400).json({
-      error: errorHandler.getErrorMessage(err),
-    });
+    res.status(500).json({ error: err.message });
   }
 };
-const read = (req, res) => {
-    req.profile.hashed_password = undefined;
-    req.profile.salt = undefined;
-    return res.json(req.profile);
-  };
-const userByID = async (req, res, next, id) => {
+
+// READ: Get a single user by ID
+const readUser = async (req, res) => {
   try {
-    let user = await User.findById(id);
-    if (!user)
-      return res.status("400").json({
-        error: "User not found",
-      });
-    req.profile = user;
-    next();
-  } catch (err) {
-    return res.status("400").json({
-      error: "Could not retrieve user",
-    });
-  }
-};
-const update = async (req, res) => {
-  try {
-    let user = req.profile;
-    user = extend(user, req.body);
-    user.updated = Date.now();
-    await user.save();
-    user.hashed_password = undefined;
-    user.salt = undefined;
+    const user = await User.findById(req.params.userId).select('-password');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
     res.json(user);
   } catch (err) {
-    return res.status(400).json({
-      error: errorHandler.getErrorMessage(err),
-    });
+    res.status(500).json({ error: err.message });
   }
 };
-const remove = async (req, res) => {
+
+// UPDATE: Update a user's information
+const updateUser = async (req, res) => {
   try {
-    let user = req.profile;
-    let deletedUser = await user.remove();
-    deletedUser.hashed_password = undefined;
-    deletedUser.salt = undefined;
-    res.json(deletedUser);
+    let user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    user = Object.assign(user, req.body);
+    await user.save();
+    user.password = undefined; // Ensure the password is not sent back
+    res.json(user);
   } catch (err) {
-    return res.status(400).json({
-      error: errorHandler.getErrorMessage(err),
-    });
+    res.status(500).json({ error: err.message });
   }
 };
+
+// DELETE: Delete a user
+const deleteUser = async (req, res) => {
+  try {
+    const user = await User.deleteOne( { id :  req.params.userId } );
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json({ message: 'User deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Sign in a user and generate a JWT
 const signIn = async (req, res) => {
   try {
-    const user = await User.findOne({"email": req.body.email});
-    console.log(user);
-
+    const user = await User.findOne({ email: req.body.email });
     if (!user) {
-      return res.status(401).json({ message: "Invalid username." });
+      return res.status(401).json({ error: 'User not found' });
     }
-
-    if (!user.authenticate(req.body.password)) {
-      return res.status('401').send({
-        error: "password don't match."
-      })
+    const isMatch = await user.verifyPassword(req.body.password);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Invalid password' });
     }
-
-    const token = jwt.sign({ userId: user._id }, "secret", {
-      expiresIn: "1h",
-    });
-    res.status(200).json({ token });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
+    res.json({ token });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };
 
-const signOut = async (req, res) => {
-    res.clearCookie("")
-    return res.status(200).json({ message: 'Logout successful.' });
+const userController = {
+  createUser,
+  signIn,
+  listUsers,
+  readUser,
+  updateUser,
+  deleteUser
+};
 
-}
-
-// const requireSignin = expressJwt({
-//   secret: config.jwtSecret,
-//   userProperty: 'auth'
-// });
-
-const hasAuthorization = (req, res, next) => {
-  const authorized = req.profile && req.auth && req.profile._id == req.auth._id
-  if (!(authorized)) {
-    return res.status('403').json({
-      error: "User is not authorized"
-    })
-  }
-  next()
-}
-export default { create, list, userByID, update, read, remove, signIn, signOut, hasAuthorization};//, requireSignin};
+export default userController;
