@@ -5,6 +5,11 @@ import userController from '../controllers/user.controller.js';
 import authenticate from '../middleware/authenticate.js'; 
 
 const router = express.Router();
+//render the home page
+router.get('/', (req, res) => {
+    const indexPath = path.join(__dirname, 'views', 'index.html');
+    res.sendFile(indexPath);
+});
 
 router.post('/', userController.createUser);
 
