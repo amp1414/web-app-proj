@@ -7,7 +7,7 @@ import authenticate from '../middleware/authenticate.js';
 const router = express.Router();
 //render the home page
 router.get('/', (req, res) => {
-    const indexPath = path.join(__dirname, 'views', 'index.html');
+    const indexPath = path.join(__dirname, 'views', 'index');
     res.sendFile(indexPath);
 });
 
