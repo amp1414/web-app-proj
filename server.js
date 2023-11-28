@@ -5,7 +5,9 @@ import mongoose from 'mongoose';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import config from './config/config.js';
-import userRoutes from './server/routes/user.routes.js'; 
+import userRoutesAPI from './server/routes/user.routes.js'; 
+import userRoutes from './server/routes/routes.js'; 
+
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -27,11 +29,10 @@ mongoose.connect(config.mongoUri)
 // Set the views directory and use the ejs engine
 app.set('views', path.join(__dirname, 'server', 'views'));
 app.set('view engine', 'ejs');
-app.use('/api/users', userRoutes);
+app.use('/api/users', userRoutesAPI);
+app.use('/', userRoutes);
 
-app.get("/", (req, res) => {
-  res.render('index'); // Render the home page
-});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.listen(config.port, () => {
