@@ -85,13 +85,29 @@ const signIn = async (req, res) => {
   }
 };
 
+// Get the currently logged-in user
+const getLoggedInUser = (req, res) => {
+  const userId = req.user._id;
+  User.findById(userId).select('-password')
+    .then(user => {
+      res.json(user);
+    })
+    .catch(err => {
+      res.status(500).json({ error: err.message });
+    });
+};
+
+// Add the authenticate middleware to routes that require authentication
+//router.get('/me', authenticate, userController.getLoggedInUser);
+
 const userController = {
   createUser,
   signIn,
   listUsers,
   readUser,
   updateUser,
-  deleteUser
+  deleteUser,
+  getLoggedInUser
 };
 
 export default userController;
