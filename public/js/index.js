@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import UserList from './UserList';
+import navBar from '../../navbar';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -20,6 +21,7 @@ const LoginPage = () => {
 
   return (
     <div>
+      <navBar></navBar>
       <h1>Login</h1>
       <form>
         <label>Email:</label>
