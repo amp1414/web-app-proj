@@ -97,8 +97,7 @@ const getLoggedInUser = (req, res) => {
     });
 };
 
-// Add the authenticate middleware to routes that require authentication
-router.get('/me', authenticate, userController.getLoggedInUser);
+
 
 const userController = {
   createUser,
