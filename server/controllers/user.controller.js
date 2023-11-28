@@ -100,6 +100,13 @@ const getLoggedInUser = (req, res) => {
 // Add the authenticate middleware to routes that require authentication
 //router.get('/me', authenticate, userController.getLoggedInUser);
 
+
+// Sign out a user
+const signOut = (req, res) => {
+  // Optionally perform additional cleanup or logging out logic
+  res.json({ message: 'User signed out successfully' });
+};
+
 const userController = {
   createUser,
   signIn,
@@ -107,7 +114,8 @@ const userController = {
   readUser,
   updateUser,
   deleteUser,
-  getLoggedInUser
+  getLoggedInUser,
+  signOut, // Add the signOut method
 };
 
 export default userController;

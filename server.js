@@ -32,6 +32,11 @@ app.use('/api/users', userRoutes);
 app.get("/", (req, res) => {
   res.render('index'); // Render the home page
 });
+app.use((req, res, next) => {
+
+  res.locals.userLoggedIn = isUserLoggedIn(); // Assuming you have a function isUserLoggedIn to check authentication
+  next();
+});
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.listen(config.port, () => {

@@ -1,39 +1,42 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import UserList from './UserList';
+// server.js
 
-const LoginPage = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+import express from 'express';
+import mongoose from 'mongoose';
+import bodyParser from 'body-parser';
+import cors from 'cors';
+import config from './config/config.js';
+import userRoutes from './server/routes/user.routes.js'; 
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import ejs from 'ejs';
 
-  const handleLogin = async () => {
-    try {
-      const response = await axios.post('/api/signin', {
-        email: email,
-        password: password,
-      });
-      localStorage.setItem('token', response.data.token);
-    } catch (error) {
-      console.error('Login failed:', error.response.data.error);
-    }
-  };
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+dotenv.config();
 
-  return (
-    <div>
-      <h1>Login</h1>
-      <form>
-        <label>Email:</label>
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+const app = express();
 
-        <label>Password:</label>
-        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+app.use(cors());
+app.use(bodyParser.json());
 
-        <button type="button" onClick={handleLogin}>
-          Log In
-        </button>
-      </form>
-    </div>
-  );
-};
+mongoose.connect(config.mongoUri)
+  .then(() => console.log('Connected to MongoDB'))
+  .catch(err => console.error('Error to connect to MongoDB', err));
 
-export default LoginPage;
+// Set the views directory and use the ejs engine
+app.set('views', path.join(__dirname, 'server', 'views'));
+app.set('view engine', 'ejs');
+app.use('/api/users', userRoutes);
+
+app.get("/", (req, res) => {
+  const userLoggedIn = false; // You can replace this with your actual user authentication logic
+  res.render('index', { userLoggedIn }); // Pass userLoggedIn to the EJS template
+});
+
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.listen(config.port, () => {
+  console.log(`Server running at port ${config.port}`);
+});
