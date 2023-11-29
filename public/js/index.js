@@ -37,7 +37,4 @@ const LoginPage = () => {
     </div>
   );
 };
-document.addEventListener('DOMContentLoaded', function() {
-  handleLogin(); 
-});
 export default LoginPage;
