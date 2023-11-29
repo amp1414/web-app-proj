@@ -31,6 +31,7 @@ app.set('view engine', 'ejs');
   app.get("/", (req, res) => {
     res.render('index'); // Render the home page
   });
+  app.use(express.static('../public'));
 app.listen(config.port, () => {
   console.log(`Server running at port ${config.port}`);
 });
