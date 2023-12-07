@@ -1,112 +1,186 @@
-// controllers/user.controller.js
-import User from '../models/user.model.js';
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
+import User from '../models/user.model.js'
+import extend from 'lodash/extend.js'
+import errorHandler from './../helpers/dbErrorHandler.js'
+import request from 'request'
+import config from './../../config/config.js'
+import stripe from 'stripe'
 
-// CREATE: Sign up a new user
-const createUser = async (req, res) => {
-  const user = new User(req.body);
+const myStripe = stripe(config.stripe_test_secret_key)
+
+const create = async (req, res) => {
+  const user = new User(req.body)
   try {
-    await user.save();
-    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, { expiresIn: '2h' });
-    res.status(201).json({ user, token });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// READ: Get all users
-const listUsers = async (req, res) => {
-  try {
-    const users = await User.find().select('-password'); // Exclude password from the results
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// READ: Get a single user by ID
-const readUser = async (req, res) => {
-  try {
-    const user = await User.findById(req.params.userId).select('-password');
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// UPDATE: Update a user's information
-const updateUser = async (req, res) => {
-  try {
-    let user = await User.findById(req.params.userId);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    user = Object.assign(user, req.body);
-    await user.save();
-    user.password = undefined; // Ensure the password is not sent back
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// DELETE: Delete a user
-const deleteUser = async (req, res) => {
-  try {
-    const user = await User.deleteOne( { id :  req.params.userId } );
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    res.json({ message: 'User deleted successfully' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// Sign in a user and generate a JWT
-const signIn = async (req, res) => {
-  try {
-    const user = await User.findOne({ email: req.body.email });
-    if (!user) {
-      return res.status(401).json({ error: 'User not found' });
-    }
-    const isMatch = await user.verifyPassword(req.body.password);
-    if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid password' });
-    }
-    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
-    res.json({ token });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// Get the currently logged-in user
-const getLoggedInUser = (req, res) => {
-  const userId = req.user._id;
-  User.findById(userId).select('-password')
-    .then(user => {
-      res.json(user);
+    await user.save()
+    return res.status(200).json({
+      message: "Successfully signed up!"
     })
-    .catch(err => {
-      res.status(500).json({ error: err.message });
-    });
-};
+  } catch (err) {
+    return res.status(400).json({
+      error: errorHandler.getErrorMessage(err)
+    })
+  }
+}
 
+/**
+ * Load user and append to req.
+ */
+const userByID = async (req, res, next, id) => {
+  try {
+    let user = await User.findById(id)
+    if (!user)
+      return res.status('400').json({
+        error: "User not found"
+      })
+    req.profile = user
+    next()
+  } catch (err) {
+    return res.status('400').json({
+      error: "Could not retrieve user"
+    })
+  }
+}
 
+const read = (req, res) => {
+  req.profile.hashed_password = undefined
+  req.profile.salt = undefined
+  return res.json(req.profile)
+}
 
-const userController = {
-  createUser,
-  signIn,
-  listUsers,
-  readUser,
-  updateUser,
-  deleteUser,
-  getLoggedInUser
-};
+const list = async (req, res) => {
+  try {
+    let users = await User.find().select('name email updated created')
+    res.json(users)
+  } catch (err) {
+    return res.status(400).json({
+      error: errorHandler.getErrorMessage(err)
+    })
+  }
+}
 
-export default userController;
+const update = async (req, res) => {
+  try {
+    let user = req.profile
+    user = extend(user, req.body)
+    user.updated = Date.now()
+    await user.save()
+    user.hashed_password = undefined
+    user.salt = undefined
+    res.json(user)
+  } catch (err) {
+    return res.status(400).json({
+      error: errorHandler.getErrorMessage(err)
+    })
+  }
+}
+
+const remove = async (req, res) => {
+  try {
+    let user = req.profile
+    let deletedUser = await user.remove()
+    deletedUser.hashed_password = undefined
+    deletedUser.salt = undefined
+    res.json(deletedUser)
+  } catch (err) {
+    return res.status(400).json({
+      error: errorHandler.getErrorMessage(err)
+    })
+  }
+}
+
+const isSeller = (req, res, next) => {
+  const isSeller = req.profile && req.profile.seller
+  if (!isSeller) {
+    return res.status('403').json({
+      error: "User is not a seller"
+    })
+  }
+  next()
+}
+
+const stripe_auth = (req, res, next) => {
+  request({
+    url: "https://connect.stripe.com/oauth/token",
+    method: "POST",
+    json: true,
+    body: {client_secret:config.stripe_test_secret_key,code:req.body.stripe, grant_type:'authorization_code'}
+  }, (error, response, body) => {
+    //update user
+    if(body.error){
+      return res.status('400').json({
+        error: body.error_description
+      })
+    }
+    req.body.stripe_seller = body
+    next()
+  })
+}
+
+const stripeCustomer = (req, res, next) => {
+  if(req.profile.stripe_customer){
+      //update stripe customer
+      myStripe.customers.update(req.profile.stripe_customer, {
+          source: req.body.token
+      }, (err, customer) => {
+        if(err){
+          return res.status(400).send({
+            error: "Could not update charge details"
+          })
+        }
+        req.body.order.payment_id = customer.id
+        next()
+      })
+  }else{
+      myStripe.customers.create({
+            email: req.profile.email,
+            source: req.body.token
+      }).then((customer) => {
+          User.update({'_id':req.profile._id},
+            {'$set': { 'stripe_customer': customer.id }},
+            (err, order) => {
+              if (err) {
+                return res.status(400).send({
+                  error: errorHandler.getErrorMessage(err)
+                })
+              }
+              req.body.order.payment_id = customer.id
+              next()
+            })
+      })
+  }
+}
+
+const createCharge = (req, res, next) => {
+  if(!req.profile.stripe_seller){
+    return res.status('400').json({
+      error: "Please connect your Stripe account"
+    })
+  }
+  myStripe.tokens.create({
+    customer: req.order.payment_id,
+  }, {
+    stripeAccount: req.profile.stripe_seller.stripe_user_id,
+  }).then((token) => {
+      myStripe.charges.create({
+        amount: req.body.amount * 100, //amount in cents
+        currency: "usd",
+        source: token.id,
+      }, {
+        stripeAccount: req.profile.stripe_seller.stripe_user_id,
+      }).then((charge) => {
+        next()
+      })
+  })
+}
+
+export default {
+  create,
+  userByID,
+  read,
+  list,
+  remove,
+  update,
+  isSeller,
+  stripe_auth,
+  stripeCustomer,
+  createCharge
+}

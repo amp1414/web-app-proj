@@ -1,26 +1,31 @@
-// server/routes/user.routes.js
+import express from 'express'
+import userCtrl from '../controllers/user.controller.js' 
+	import authCtrl from '../controllers/auth.controller.js'
+	
+	const router = express.Router()
+	router.route('/api/users') 
+	.get(userCtrl.list)
+	.post(userCtrl.create)
+	/*router.route('/api/users/:userId') 
+	.get(userCtrl.read)
+	.put(userCtrl.update) 
+	.delete(userCtrl.remove)*/
+	router.route('/api/users/:userId')
+.get(authCtrl.requireSignin, userCtrl.read)
+.put(authCtrl.requireSignin, authCtrl.hasAuthorization, 
+userCtrl.update)
+.delete(authCtrl.requireSignin, authCtrl.hasAuthorization, 
+userCtrl.remove)
+router.param('userId', userCtrl.userByID)
+router.route('/api/users').post(userCtrl.create) 
+router.route('/api/users').get(userCtrl.list)
+router.param('userId', userCtrl.userByID)
+router.route('/api/users/:userId').get(userCtrl.read)
+router.route('/api/users/:userId').put(userCtrl.update)
+router.route('/api/users/:userId').delete(userCtrl.remove)
 
-import express from 'express';
-import userController from '../controllers/user.controller.js';
-import authenticate from '../middleware/authenticate.js'; 
 
-const router = express.Router();
-//render the home page
-router.get('/', (req, res) => {
-    const indexPath = path.join(__dirname, 'views', 'index');
-    res.sendFile(indexPath);
-});
-router.post('/', userController.createUser);
 
-router.post('/signin', userController.signIn);
-
-router.get('/', authenticate, userController.listUsers);
-
-router.get('/:userId', authenticate, userController.readUser);
-
-router.put('/:userId', authenticate, userController.updateUser);
-
-router.delete('/:userId', authenticate, userController.deleteUser);
-// Add the authenticate middleware to routes that require authentication
-router.get('/me', authenticate, userController.getLoggedInUser);
-export default router;
+  
+    
+	export default router
