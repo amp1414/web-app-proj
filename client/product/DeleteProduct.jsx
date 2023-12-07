@@ -19,17 +19,7 @@ export default function DeleteProduct(props) {
     setOpen(true)
   }
   const deleteProduct = () => {
-    remove({
-      shopId: props.shopId,
-      productId: props.product._id
-    }, {t: jwt.token}).then((data) => {
-      if (data.error) {
-        console.log(data.error)
-      } else {
-        setOpen(false)
-        props.onRemove(props.product)
-      }
-    })
+    alert("Remove not implemented")
   }
   const handleRequestClose = () => {
     setOpen(false)

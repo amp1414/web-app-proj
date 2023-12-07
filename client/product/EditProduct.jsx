@@ -84,26 +84,7 @@ export default function EditProduct ({match}) {
     }
   }, [])
   const clickSubmit = () => {
-    let productData = new FormData()
-    values.name && productData.append('name', values.name)
-    values.description && productData.append('description', values.description)
-    values.image && productData.append('image', values.image)
-    values.category && productData.append('category', values.category)
-    values.quantity && productData.append('quantity', values.quantity)
-    values.price && productData.append('price', values.price)
-  
-    update({
-      shopId: match.params.shopId,
-      productId: match.params.productId
-    }, {
-      t: jwt.token
-    }, productData).then((data) => {
-      if (data.error) {
-        setValues({...values, error: data.error})
-      } else {
-        setValues({...values, 'redirect': true})
-      }
-    })
+    alert("Edit not implemented")
   }
   const handleChange = name => event => {
     const value = name === 'image'
