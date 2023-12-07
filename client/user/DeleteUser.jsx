@@ -21,16 +21,7 @@ export default function DeleteUser(props) {
     setOpen(true)
   }
   const deleteAccount = () => { 
-    remove({
-      userId: props.userId
-    }, {t: jwt.token}).then((data) => {
-      if (data && data.error) {
-        console.log(data.error)
-      } else {
-        auth.signout(() => console.log('deleted'))
-        setRedirect(true)
-      }
-    })
+        alert("Remove not implemented")
   }
   const handleRequestClose = () => {
     setOpen(false)

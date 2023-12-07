@@ -87,21 +87,7 @@ export default function EditShop ({match}) {
   }, [])
 
   const clickSubmit = () => {
-    let shopData = new FormData()
-    values.name && shopData.append('name', values.name)
-    values.description && shopData.append('description', values.description)
-    values.image && shopData.append('image', values.image)
-    update({
-      shopId: match.params.shopId
-    }, {
-      t: jwt.token
-    }, shopData).then((data) => {
-      if (data.error) {
-        setValues({...values, error: data.error})
-      } else {
-        setValues({...values, 'redirect': true})
-      }
-    })
+    alert("Edit not implemented")
   }
   const handleChange = name => event => {
     const value = name === 'image'
