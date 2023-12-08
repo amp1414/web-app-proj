@@ -9,7 +9,7 @@ import authRoutes from './routes/auth.routes.js'
 import shopRoutes from './routes/shop.routes.js'
 import productRoutes from './routes/product.routes.js'
 import orderRoutes from './routes/order.routes.js'
-
+import path from 'path';
 const app = express()
 const CURRENT_WORKING_DIR = process.cwd()
 
@@ -26,6 +26,7 @@ app.use(cookieParser())
 app.use(compress())
 app.use(helmet())
 app.use(cors())
+app.use(express.static(path.join(CURRENT_WORKING_DIR,"dist/app")))
 app.use((err, req, res, next) => {
 if (err.name === 'UnauthorizedError') {
 res.status(401).json({"error" : err.name + ": " + err.message}) 
